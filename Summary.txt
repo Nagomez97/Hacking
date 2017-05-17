@@ -1,0 +1,21 @@
+BuilderEngine-Vulnerability.html
+
+Builder Engine es un "tipo de servidor" que, antes de cierta versión, permite subir archivos al directorio mediante un método POST. Este HTML permite subir archivos, que podrán ser encontrados en /files
+
+####################################################################
+
+DirtyCow.c
+
+Dirty Cow es una vulnerabilidad de antiguos sistemas linux (no sé hasta qué versión) que permite el escalado root. Hay que compilarlo con flags -pthread y -lcrypt. Para correrlo sin problemas, ejecutar ./dirtycow [password que quieres]. Finalmente, el sistema se cae al intentar realizar acciones como root. Por tanto, nada más ejecutar el exploit, debes emplear el siguiente comando:
+echo 0 > /proc/sys/vm/dirty_writeback_centisecs
+
+Por último, deberás acceder al sistema víctima desde otra terminal, empleando acceso ssh. El usuario por defecto es firefart. Para cambiar el usuario y la contraseña, modificar el .c
+
+#####################################################################
+
+TCP Reverse Shell Script
+
+Script PHP que, al ser ejecutado en un servidor, explota una vulnerabilidad permitiendo el acceso a la shell del sistema víctima.
+Para ello, deberemos  ejecutar netcat:
+nc -v -n -l -p 1234 (puerto por defecto)
+Haremos esto antes de ejecutar el PHP en el servidor, para que "escuche" la ejecución del exploit.
